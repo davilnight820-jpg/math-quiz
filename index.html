@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>수학 탐험대</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #dbeafe, #ede9fe);
+            font-family: Arial, sans-serif;
+            color: #26324b;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 520px;
+            padding: 32px;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 10px 35px rgba(50, 60, 100, 0.15);
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 8px;
+            color: #5b55d6;
+        }
+
+        .subtitle {
+            color: #737b91;
+            margin-bottom: 25px;
+        }
+
+        .progress {
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: #7770e8;
+        }
+
+        .question {
+            font-size: 23px;
+            font-weight: bold;
+            line-height: 1.5;
+            margin: 24px 0;
+            word-break: keep-all;
+        }
+
+        .choices {
+            display: grid;
+            gap: 12px;
+        }
+
+        button {
+            font-size: 16px;
+            font-weight: bold;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .choice {
+            background: #f1f2ff;
+            color: #42466b;
+        }
+
+        .choice:hover:not(:disabled) {
+            background: #e0e2ff;
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            cursor: default;
+            opacity: 0.8;
+        }
+
+        .feedback {
+            min-height: 55px;
+            margin: 20px 0 10px;
+            line-height: 1.6;
+            font-weight: bold;
+        }
+
+        .next, .restart {
+            width: 100%;
+            color: white;
+            background: #6861e8;
+            margin-top: 10px;
+        }
+
+        .next:hover, .restart:hover {
+            background: #5049cb;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .result-score {
+            font-size: 42px;
+            font-weight: bold;
+            color: #6861e8;
+            margin: 25px 0;
+        }
+
+        .result-message {
+            line-height: 1.8;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 24px 18px;
+            }
+
+            .question {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="container">
+        <h1>🚀 수학 탐험대</h1>
+        <p class="subtitle">즐겁게 풀면서 수학 실력을 키워 보자!</p>
+
+        <section id="quiz">
+            <div class="progress" id="progress"></div>
+            <div class="question" id="question"></div>
+
+            <div class="choices" id="choices"></div>
+
+            <div class="feedback" id="feedback" aria-live="polite"></div>
+
+            <button class="next hidden" id="nextBtn">
+                다음 문제 →
+            </button>
+        </section>
+
+        <section id="result" class="hidden">
+            <h2>🎉 탐험 완료!</h2>
+            <p>모든 문제를 풀었어!</p>
+            <div class="result-score" id="score"></div>
+            <p class="result-message" id="message"></p>
+            <button class="restart" id="restartBtn">
+                다시 도전하기
+            </button>
+        </section>
+    </main>
+
+    <script>
+        const questions = [
+            {
+                question: "1. 25 + 37은 얼마일까요?",
+                choices: ["52", "62", "72", "82"],
+                answer: 1,
+                explanation: "25 + 37 = 62예요."
+            },
+            {
+                question: "2. 8 × 7의 값은 얼마일까요?",
+                choices: ["48", "54", "56", "64"],
+                answer: 2,
+                explanation: "8 × 7 = 56이에요."
+            },
+            {
+                question: "3. 100에서 36을 빼면 얼마일까요?",
+                choices: ["54", "64", "74", "84"],
+                answer: 1,
+                explanation: "100 - 36 = 64예요."
+            },
+            {
+                question: "4. 한 변이 5cm인 정사각형의 둘레는?",
+                choices: ["10cm", "15cm", "20cm", "25cm"],
+                answer: 2,
+                explanation: "정사각형의 둘레는 한 변의 길이 × 4이므로 20cm예요."
+            },
+            {
+                question: "5. 사과가 24개 있어요. 6개씩 나누면 몇 명에게 줄 수 있을까요?",
+                choices: ["3명", "4명", "5명", "6명"],
+                answer: 1,
+                explanation: "24 ÷ 6 = 4이므로 4명에게 줄 수 있어요."
+            },
+            {
+                question: "6. 1시간 30분은 모두 몇 분일까요?",
+                choices: ["60분", "80분", "90분", "100분"],
+                answer: 2,
+                explanation: "1시간은 60분이므로 60 + 30 = 90분이에요."
+            },
+            {
+                question: "7. 다음 중 가장 큰 수는 무엇일까요?",
+                choices: ["0.7", "0.65", "0.8", "0.75"],
+                answer: 2,
+                explanation: "0.80은 0.75보다 크므로 0.8이 가장 커요."
+            },
+            {
+                question: "8. 삼각형의 세 각의 크기의 합은?",
+                choices: ["90도", "180도", "270도", "360도"],
+                answer: 1,
+                explanation: "삼각형의 세 내각의 합은 180도예요."
+            },
+            {
+                question: "9. 3/4와 크기가 같은 분수는?",
+                choices: ["2/3", "4/6", "6/8", "5/8"],
+                answer: 2,
+                explanation: "3/4의 분자와 분모에 각각 2를 곱하면 6/8이에요."
+            },
+            {
+                question: "10. 규칙에 따라 다음에 올 수는? 2, 4, 6, 8, □",
+                choices: ["9", "10", "11", "12"],
+                answer: 1,
+                explanation: "2씩 커지는 규칙이므로 다음 수는 10이에요."
+            }
+        ];
+
+        let current = 0;
+        let score = 0;
+        let answered = false;
+
+        const quiz = document.getElementById("quiz");
+        const result = document.getElementById("result");
+        const progress = document.getElementById("progress");
+        const question = document.getElementById("question");
+        const choices = document.getElementById("choices");
+        const feedback = document.getElementById("feedback");
+        const nextBtn = document.getElementById("nextBtn");
+
+        function showQuestion() {
+            answered = false;
+
+            const q = questions[current];
+
+            progress.textContent =
+                `문제 ${current + 1} / ${questions.length}`;
+
+            question.textContent = q.question;
+            choices.innerHTML = "";
+            feedback.textContent = "";
+            nextBtn.classList.add("hidden");
+
+            q.choices.forEach((choice, index) => {
+                const button = document.createElement("button");
+
+                button.className = "choice";
+                button.textContent =
+                    `${index + 1}. ${choice}`;
+
+                button.addEventListener("click", () => {
+                    checkAnswer(index);
+                });
+
+                choices.appendChild(button);
+            });
+        }
+
+        function checkAnswer(selected) {
+            if (answered) return;
+
+            answered = true;
+
+            const q = questions[current];
+            const buttons = choices.querySelectorAll("button");
+
+            buttons.forEach((button, index) => {
+                button.disabled = true;
+
+                if (index === q.answer) {
+                    button.style.background = "#d1fae5";
+                    button.style.color = "#065f46";
+                }
+
+                if (index === selected && selected !== q.answer) {
+                    button.style.background = "#fee2e2";
+                    button.style.color = "#991b1b";
+                }
+            });
+
+            if (selected === q.answer) {
+                score += 10;
+                feedback.style.color = "#059669";
+                feedback.textContent =
+                    `정답이에요! 🎉 ${q.explanation}`;
+            } else {
+                feedback.style.color = "#dc2626";
+                feedback.textContent =
+                    `아쉬워요! ${q.explanation}`;
+            }
+
+            nextBtn.textContent =
+                current === questions.length - 1
+                    ? "결과 확인하기"
+                    : "다음 문제 →";
+
+            nextBtn.classList.remove("hidden");
+        }
+
+        function showResult() {
+            quiz.classList.add("hidden");
+            result.classList.remove("hidden");
+
+            document.getElementById("score").textContent =
+                `${score} / ${questions.length * 10}점`;
+
+            let message;
+
+            if (score === 100) {
+                message = "완벽해요! 모든 문제를 맞혔어요! 🏆";
+            } else if (score >= 70) {
+                message = "훌륭해요! 조금만 더 연습하면 완벽해질 거예요! 🌟";
+            } else if (score >= 40) {
+                message = "잘했어요! 틀린 문제를 다시 살펴봐요! 💪";
+            } else {
+                message = "괜찮아요! 다시 도전하면서 배워 봐요! 🌱";
+            }
+
+            document.getElementById("message").textContent =
+                message;
+        }
+
+                nextBtn.addEventListener("click", () => {
+            if (current < questions.length - 1) {
+                current++;
+                showQuestion();
+            } else {
+                showResult();
+            }
+        });
+
+        document.getElementById("restartBtn").addEventListener(
+            "click",
+            () => {
+                current = 0;
+                score = 0;
+
+                result.classList.add("hidden");
+                quiz.classList.remove("hidden");
+
+                showQuestion();
+            }
+        );
+
+        showQuestion();
+    </script>
+</body>
+</html>
